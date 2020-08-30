@@ -9,6 +9,7 @@ import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Chip from '@material-ui/core/Chip';
 import Radar from 'radar-sdk-js';
+import PlaceDetailsDialog from './PlaceDetailsDialog';
 
 const useStyles = makeStyles({
   root: {
@@ -25,7 +26,14 @@ export default function MediaCard(props) {
   const [categories,setCategories] = React.useState([]);
   const [distance,setDistance] = React.useState('');
   const [time,setTime] = React.useState('');
+  const [moreOpen,setMoreOpen] = React.useState(false);
+  const [selectedPlace,setSelectedPlace] = React.useState({});
   const userLocation = props.userlocation;
+
+  function handleMoreClick(p){
+    setSelectedPlace(p);
+    setMoreOpen(true);
+}
   React.useEffect(()=>{
       setPlace(props.place);
       setCategories(props.place.categories);
@@ -54,14 +62,20 @@ export default function MediaCard(props) {
         }
       });
       
-      
+      // eslint-disable-next-line
   },[])
 
-
-  function handleMoreClick(){
-      props.handleMoreClick(place)
+  function handleClose(){
+      setMoreOpen(false);
   }
+
+//   function handleMoreClick(){
+//     //   props.handleMoreClick(place)
+//     setMoreOpen(true);
+//     setSelectedPlace(place);
+//   }
   return (
+      <div>
     <Card className={classes.root}>
       <CardActionArea>
         <CardMedia
@@ -83,6 +97,9 @@ export default function MediaCard(props) {
           Learn More
         </Button>
       </CardActions>
+      
     </Card>
+    {moreOpen && <PlaceDetailsDialog categories={categories} time={time} distance={distance} open={moreOpen} handleMore={handleMoreClick} place={selectedPlace} handleClose={handleClose}></PlaceDetailsDialog>}
+    </div>
   );
 }

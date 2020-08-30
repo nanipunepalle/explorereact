@@ -14,7 +14,7 @@ import PlaceCard from './PlaceCard';
 import { Grid } from '@material-ui/core';
 import Signin from './Signin';
 import Signup from './Signup';
-import PlaceDetailsDialog from './PlaceDetailsDialog';
+// import PlaceDetailsDialog from './PlaceDetailsDialog';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -48,18 +48,23 @@ const useStyles = makeStyles((theme) => ({
 function Home() {
     const classes = useStyles();
     const categories = ['city-infrastructure', 'education', 'government-building', 'hotel-lodging', 'local-services', 'locality', 'medical-health', 'outdoor-places', 'religion', 'science-engineering', 'shopping-retail', 'sports-recreation', 'travel-transportation']
+    const [filteresCategories,setFilteredCategories] = React.useState(null);
     const [places, setPlaces] = React.useState([]);
     const [signinOpen, setSigninOpen] = React.useState(false);
     const [signupOpen, setSignupOpen] = React.useState(false);
-    const [moreOpen,setMoreOpen] = React.useState(false);
-    const [selectedPlace,setSelectedPlace] = React.useState({});
+    // const [moreOpen,setMoreOpen] = React.useState(false);
+    // const [selectedPlace,setSelectedPlace] = React.useState({});
     const [currentUserLocation, setCurrentUserLocation] = React.useState(null);
     const [loggedin, setLoggedin] = React.useState(false);
     const token = localStorage.getItem('token');
     function handleClose() {
         setSigninOpen(false);
         setSignupOpen(false);
-        setMoreOpen(false);
+        // setMoreOpen(false);
+        const t = localStorage.getItem('token');
+        if(t){
+            setLoggedin(true);
+        }
     }
 
     function handleSigninClick() {
@@ -68,12 +73,15 @@ function Home() {
     function handleSignupClick() {
         setSignupOpen(true);
     }
-    function handleMoreClick(p){
-        setSelectedPlace(p);
-        setMoreOpen(true);
-    }
+    // function handleMoreClick(p){
+    //     setSelectedPlace(p);
+    //     setMoreOpen(true);
+    // }
+    function handleChange(event, values) {
+        setFilteredCategories(values);
+      }
     function handleSignoutClick(){
-        fetch('http://localhost:4000/users/logout', {
+        fetch('https://exploreserver2.herokuapp.com/users/logout', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
@@ -85,6 +93,33 @@ function Home() {
                 localStorage.removeItem('token')
                 setLoggedin(false);
             })
+    }
+    function handleFilterClick(){
+        console.log(filteresCategories);
+        Radar.trackOnce(function (err, result) {
+            console.log(err);
+            console.log(result);
+            if (!err) {
+                console.log(result);
+                console.log(result.location.latitude);
+                setCurrentUserLocation(result.location);
+                Radar.searchPlaces({
+                    near: {
+                        latitude: result.location.latitude,
+                        longitude: result.location.longitude
+                    },
+                    categories: filteresCategories,
+                    radius: 1000,
+                    // chains: ['dominos'],
+                    limit: 10
+                }, function (err, result) {
+                    if (!err) {
+                        console.log(result);
+                        setPlaces(result.places);
+                    }
+                });
+            }
+        });
     }
 
     React.useEffect(() => {
@@ -115,7 +150,7 @@ function Home() {
                 });
             }
         });
-    }, [])
+    }, [token,categories])
     return (
         <div className={classes.root}>
             <AppBar position="static">
@@ -137,7 +172,7 @@ function Home() {
                         id="tags-outlined"
                         options={categories}
                         getOptionLabel={(option) => option}
-                        // defaultValue={[top100Films[13]]}
+                        onChange={handleChange}
                         filterSelectedOptions
                         renderInput={(params) => (
                             <TextField
@@ -150,7 +185,7 @@ function Home() {
                     />
                 </Box>
                 <Box className={classes.buttons}>
-                    <Button className={classes.button} variant="contained">Filter</Button>
+                    <Button onClick={handleFilterClick} className={classes.button} variant="contained">Filter</Button>
                     <Button className={classes.discardButton} variant="contained">Discard</Button>
                 </Box>
             </Box>
@@ -167,7 +202,7 @@ function Home() {
             </div>
             <Signin open={signinOpen} handleClose={handleClose}></Signin>
             <Signup open={signupOpen} handleClose={handleClose}></Signup>
-            {/* <PlaceDetailsDialog open={moreOpen} handleMore={handleMoreClick} place={selectedPlace} handleClose={handleClose}></PlaceDetailsDialog> */}
+            
         </div>
     );
 }

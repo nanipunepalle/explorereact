@@ -4,14 +4,35 @@ import TextField from '@material-ui/core/TextField';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
+// import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Radar from 'radar-sdk-js';
+import Snackbar from '@material-ui/core/Snackbar';
+import MuiAlert from '@material-ui/lab/Alert';
+// import CircularProgress from '@material-ui/core/CircularProgress';
+
+function Alert(props) {
+    return <MuiAlert elevation={6} variant="filled" {...props} />;
+  }
 
 export default function FormDialog(props) {
     const open = props.open;
+    const [state, setState] = React.useState({
+        open: false,
+        vertical: 'top',
+        horizontal: 'center',
+        message: 'success',
+        type: 'error',
+        autoHide: 300
+      });
+      const [loading, setLoading] = React.useState(false);
+      const { vertical, horizontal, nopen, message, type, autoHide } = state;
 
+      function handleClose(){
+        setState({ ...state, nopen: false });
+      }
     function handleSignin(event) {
+        setLoading(true);
         event.preventDefault();
         const { email, password } = event.target.elements
         console.log(email.value);
@@ -23,7 +44,7 @@ export default function FormDialog(props) {
                 password: password.value
             };
             data = JSON.stringify(payload);
-            fetch('http://localhost:4000/users/login', {
+            fetch('https://exploreserver2.herokuapp.com/users/login', {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
@@ -37,28 +58,21 @@ export default function FormDialog(props) {
                     localStorage.setItem('token', result.token);
                     console.log(result.user._id)
                     Radar.setUserId(result.user._id);
-                    fetch('https://api.radar.io/v1/users/56db1f4613012711002229f4', {
-                        headers: {
-                            // 'Content-Type': 'application/json',
-                            // 'Accept': 'application/json',
-                            'Authorization': btoa("prj_live_pk_3bb22a86ba4987c58bb96bcee419db8c41368c62"),
-                        },
-                        method: 'GET',
-                    })
+                    props.handleClose()
                 })
             })
         }
         catch (error) {
 
-            // setLoading(false);
-            // setState({
-            //   open: true,
-            //   vertical: 'top',
-            //   horizontal: 'center',
-            //   message: error.message,
-            //   type: "error",
-            //   autoHide: 6000
-            // })
+            setLoading(false);
+            setState({
+              open: true,
+              vertical: 'top',
+              horizontal: 'center',
+              message: error.message,
+              type: "error",
+              autoHide: 6000
+            })
         }
 
 
@@ -67,12 +81,22 @@ export default function FormDialog(props) {
 
     return (
         <div>
+        <Snackbar
+        anchorOrigin={{ vertical, horizontal }}
+        open={nopen}
+        autoHideDuration={autoHide}
+        onClose={handleClose}
+        key={vertical + horizontal}
+      >
+        <Alert onClose={handleClose} severity={type}>{message}</Alert>
+      </Snackbar>
             <Dialog fullWidth
                 maxWidth={'sm'} open={open} onClose={props.handleClose} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">Signin</DialogTitle>
                 <form onSubmit={handleSignin}>
                     <DialogContent>
                         <TextField
+                        required
                             autoFocus
                             margin="normal"
                             id="email"
@@ -82,6 +106,7 @@ export default function FormDialog(props) {
                             fullWidth
                         />
                         <TextField
+                        required
                             autoFocus
                             margin="normal"
                             id="password"
@@ -96,7 +121,7 @@ export default function FormDialog(props) {
                             Cancel
                         </Button>
                         <Button type="submit" color="primary">
-                            Signin
+                            {!loading && 'Signin'}
                         </Button>
                     </DialogActions>
                 </form>
